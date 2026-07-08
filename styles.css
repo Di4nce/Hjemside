@@ -1,0 +1,23 @@
+body {
+    background-color: beige;
+}
+
+div {
+
+}
+
+
+h1 {
+    /*background-color: white;
+    margin: 20px;
+    width: 400px;*/
+    text-align: center;
+}
+
+
+.normal {
+    background-color: white;
+    margin: 20px;
+    width: 400px;
+    padding: 0px 5px 5px 5px;
+}
