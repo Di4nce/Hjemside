@@ -4,6 +4,9 @@
     box-sizing: border-box;
 }
 
+a {
+    color: #2563eb;
+}
 
 body {
 
@@ -100,7 +103,7 @@ nav {
 
     text-align: center;
 
-    padding: 120px 20px 100px;
+    padding: 70px 20px 60px;
 
 }
 
@@ -150,7 +153,7 @@ nav {
 
     margin: auto;
 
-    padding: 70px 20px;
+    padding: 20px 20px;
 
 }
 
@@ -159,7 +162,7 @@ nav {
 
     font-size: 36px;
 
-    margin-bottom: 35px;
+    margin-bottom: 20px;
 
     color: #111827;
 
@@ -288,7 +291,7 @@ footer {
 
     text-align: center;
 
-    padding: 40px;
+    padding: 25px;
 
     color: #6b7280;
 
