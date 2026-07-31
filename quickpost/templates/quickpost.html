@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Post</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f6f8fb;
+            color: #222;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { font-size: 22px; margin-bottom: 20px; }
+        form { display: flex; flex-direction: column; gap: 14px; max-width: 500px; margin: auto; }
+        label { font-weight: 600; font-size: 14px; }
+        input, textarea, select {
+            font-size: 16px; /* prevents iOS zoom-on-focus */
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            width: 100%;
+        }
+        textarea { min-height: 140px; resize: vertical; }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .flash {
+            background: #eef2ff;
+            color: #2563eb;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 14px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🎲 Quick Post</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data">
+        <div>
+            <label>Category</label>
+            <select name="category">
+                <option value="interests">Interest (game report, hobby, etc.)</option>
+                <option value="work">Work project</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Title</label>
+            <input type="text" name="title" required placeholder="Session 13: ...">
+        </div>
+
+        <div>
+            <label>Emoji (optional)</label>
+            <input type="text" name="emoji" placeholder="🎲">
+        </div>
+
+        <div>
+            <label>Tags (comma separated)</label>
+            <input type="text" name="tags" placeholder="Tabletop RPGs, D&D">
+        </div>
+
+        <div>
+            <label>Photo (optional)</label>
+            <input type="file" name="photo" accept="image/*" capture="environment">
+        </div>
+
+        <div>
+            <label>Body</label>
+            <textarea name="body" required placeholder="What happened tonight..."></textarea>
+        </div>
+
+        <button type="submit">Post it</button>
+    </form>
+
+</body>
+</html>

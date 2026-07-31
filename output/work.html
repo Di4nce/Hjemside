@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Work Projects — Lerseth</title>
+
+    <link rel="stylesheet" href="static/styles.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<header>
+    <nav>
+        <div class="logo">
+            <a href="index.html" style="color:inherit; text-decoration:none;">LERSETH</a>
+        </div>
+
+        <div class="links">
+            <a href="index.html#about">About</a>
+            <a href="work.html">Projects</a>
+            <a href="interests.html">Interests</a>
+            <a href="index.html#contact">Contact</a>
+        </div>
+    </nav>
+</header>
+
+
+
+<section class="section">
+    <h2>Work Projects</h2>
+
+    <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" data-tag="all">All</button>
+        
+        <button class="filter-btn" data-tag="ISO 27001">ISO 27001</button>
+        
+        <button class="filter-btn" data-tag="Information Security">Information Security</button>
+        
+    </div>
+
+    <div class="cards" id="post-grid">
+        
+        <a class="card post-card" href="posts/iso27001-gap-analysis.html" data-tags="Information Security,ISO 27001">
+            
+            <span class="post-date">31 Jul 2026</span>
+            <h3>🛡️ Running a lightweight ISO 27001 gap analysis</h3>
+            <p class="post-excerpt">A quick walkthrough of the checklist I use before a full audit.</p>
+            <div class="tags">
+                <span class="tag">Information Security</span><span class="tag">ISO 27001</span>
+            </div>
+        </a>
+        
+    </div>
+</section>
+
+<script>
+    // Simple client-side tag filter — no page reload needed.
+    const filterBar = document.getElementById('filter-bar');
+    const grid = document.getElementById('post-grid');
+
+    filterBar.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('filter-btn')) return;
+
+        // Update active button styling
+        filterBar.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+
+        const chosenTag = e.target.dataset.tag;
+
+        grid.querySelectorAll('.post-card').forEach(card => {
+            const cardTags = card.dataset.tags.split(',');
+            const show = chosenTag === 'all' || cardTags.includes(chosenTag);
+            card.style.display = show ? '' : 'none';
+        });
+    });
+</script>
+
+
+
+<footer>
+    © 2026 Lerseth
+</footer>
+
+</body>
+</html>

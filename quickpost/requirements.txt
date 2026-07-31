@@ -1,0 +1,5 @@
+Flask==3.*
+Pillow==10.*
+python-frontmatter==1.*
+Markdown==3.*
+Jinja2==3.*
