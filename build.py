@@ -148,5 +148,3 @@ def build():
 
 if __name__ == "__main__":
     build()
-EOF
-echo "build.py updated"</parameter>
