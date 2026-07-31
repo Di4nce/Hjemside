@@ -26,6 +26,14 @@ OUTPUT_DIR = ROOT / "output"
 
 CATEGORIES = ["work", "interests"]
 
+# The three fixed themes each section is organized around. These drive
+# the filter buttons on work.html / interests.html, and every post must
+# declare one of them (see the "theme" field check in load_posts below).
+THEMES = {
+    "work": ["Information Security", "Quality Management", "Learning"],
+    "interests": ["Music", "Tabletop RPGs", "Homelab"],
+}
+
 env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
 
@@ -37,10 +45,15 @@ def load_posts(category):
     for md_file in sorted(folder.glob("*.md")):
         post = frontmatter.load(md_file)
 
-        required = ["title", "date", "emoji"]
+        required = ["title", "date", "emoji", "theme"]
         missing = [f for f in required if f not in post.metadata]
         if missing:
             print(f"  ! Skipping {md_file.name}: missing frontmatter field(s) {missing}")
+            continue
+
+        theme = post["theme"]
+        if theme not in THEMES[category]:
+            print(f"  ! Skipping {md_file.name}: theme '{theme}' must be one of {THEMES[category]}")
             continue
 
         date = post["date"]
@@ -69,7 +82,8 @@ def load_posts(category):
             "title": post["title"],
             "date": date,
             "emoji": post.get("emoji", ""),
-            "tags": post.get("tags", []),
+            "theme": theme,
+            "tags": post.get("tags", []),  # optional extra labels, just for display
             "image": post.get("image", ""),
             "category": category,
             "slug": slug,
@@ -107,13 +121,12 @@ def build():
     titles = {"work": "Work Projects", "interests": "Interests"}
 
     for cat in CATEGORIES:
-        tags = sorted({tag for p in all_posts[cat] for tag in p["tags"]})
         (OUTPUT_DIR / f"{cat}.html").write_text(
             list_tpl.render(
                 root="",
                 page_title=titles[cat],
                 posts=all_posts[cat],
-                all_tags=tags,
+                themes=THEMES[cat],
             ),
             encoding="utf-8",
         )
@@ -135,3 +148,5 @@ def build():
 
 if __name__ == "__main__":
     build()
+EOF
+echo "build.py updated"</parameter>

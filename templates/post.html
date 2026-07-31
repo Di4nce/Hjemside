@@ -8,7 +8,7 @@
     {% if post.image %}<img class="post-image" src="../{{ post.image }}" alt="">{% endif %}
 
     <h1>{{ post.emoji }} {{ post.title }}</h1>
-    <p class="post-meta">{{ post.date.strftime('%d %b %Y') }} — {{ post.category | capitalize }}</p>
+    <p class="post-meta">{{ post.date.strftime('%d %b %Y') }} — {{ post.theme }}</p>
 
     <div class="tags">
         {% for tag in post.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
