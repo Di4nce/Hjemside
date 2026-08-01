@@ -1,3 +1,4 @@
 *:Zone.Identifier
 output/
 venv/
+deploy.sh
