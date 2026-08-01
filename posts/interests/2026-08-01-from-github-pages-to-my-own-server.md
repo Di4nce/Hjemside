@@ -3,7 +3,7 @@ title: From GitHub Pages to My Own Server
 date: 2026-08-01
 emoji: 🛠️
 theme: Homelab
-tags: [Apache, Python, Homelab]
+tags: [Apache, Python]
 excerpt: Why I moved my homepage off GitHub Pages and turned it into a small, self-hosted blog.
 ---
 
