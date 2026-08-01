@@ -353,6 +353,7 @@ footer {
 .card.post-card,
 .card.post-card * {
     text-decoration: none;
+    -webkit-text-decoration-line: none;
 }
 
 .card.post-card {
