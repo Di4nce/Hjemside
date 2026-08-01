@@ -344,3 +344,139 @@ footer {
 
 
 }
+
+/* ---------------------------------- */
+/* Blog additions                     */
+/* ---------------------------------- */
+
+/* Card as a clickable post preview */
+.card.post-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.card .post-date {
+    display: block;
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+}
+
+.card .post-excerpt {
+    color: #4b5563;
+    font-size: 15px;
+}
+
+.card .post-image {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+/* Tag pills */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 5px;
+}
+
+.tag {
+    background: #eef2ff;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 999px;
+}
+
+/* Filter bar on subpages */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.filter-btn {
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.filter-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+}
+
+.filter-btn.active {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+/* Section header row with "see all" link */
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+}
+
+.section-head a {
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* Single post page */
+.post-full .post-image {
+    height: auto;
+    max-height: 420px;
+    margin-bottom: 30px;
+}
+
+.post-full h1 {
+    font-size: 40px;
+    color: #111827;
+    margin-bottom: 10px;
+}
+
+.post-full .post-meta {
+    color: #9ca3af;
+    margin-bottom: 25px;
+}
+
+.post-full .post-body img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.post-full .post-body p {
+    margin-bottom: 16px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-top: 30px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+@media (max-width: 700px) {
+    .section-head {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+}
