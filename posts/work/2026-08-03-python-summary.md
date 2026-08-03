@@ -7,7 +7,7 @@ tags: [Python]
 excerpt: Learning Python for a university course this autumn. My summer project became a one-page Python cheat sheet I can use.
 ---
 
-I'm starting a 10-credit programming course at university this autumn as part of my continuous learning. Although I've done some programming before, I wanted to be as prepared as possible before classes start.
+I'm starting a 10-credit programming course at the university this autumn as part of my continuous learning. Although I've done some programming before, I wanted to be as prepared as possible before classes start.
 
 During my summer vacation, I spent some time refreshing my Python skills. I worked through small projects and collected notes on Python syntax from different online resources. Having everything in one place made it much easier to look things up while coding.
 
@@ -18,8 +18,7 @@ I've included the cheat sheet below. Hopefully, someone else will find it useful
 # Python Cheat Sheet
 
 > **Note**
-> This is my personal Python cheat sheet, compiled from various online learning resources.
-> I use it as a quick reference while working on small projects and learning Python. :contentReference[oaicite:0]{index=0}
+> This is my personal Python cheat sheet. I use it as a quick reference while working on small projects and learning Python.
 
 ---
 

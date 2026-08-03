@@ -1,5 +1,5 @@
 ---
-title: From GitHub Pages to My Own Server
+title: Apache Web Server
 date: 2026-08-01
 emoji: 🛠️
 theme: Homelab
