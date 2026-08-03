@@ -1,73 +1,114 @@
-# Lerseth blog build — integration notes
+# Markdown Static Blog Generator
 
 ## What this is
 
-A static-site generator for lerseth.com. It reads Markdown posts, renders
-them through Jinja2 templates, and produces a plain HTML/CSS site in
-`output/` the only thing Apache needs to serve.
+A lightweight static-site generator that converts Markdown blog posts into a
+plain HTML/CSS website.
 
-A small optional Flask app (`quickpost/`) gives a mobile-friendly
-form to add a new post (with a photo) from phone mid-session; it
-writes the Markdown file and re-runs the build.
+The generator reads Markdown files with frontmatter metadata, renders them
+through Jinja2 templates, and outputs a ready-to-serve static website.
+
+An optional Flask-based quick-post application is included for creating new
+posts from a mobile device. It supports uploading images, creating Markdown
+posts, and triggering a rebuild.
+
+The generated website contains only static files, making it suitable for
+hosting with Apache, Nginx, GitHub Pages, or any other static web server.
+
+## Project structure
 
 ```
-posts/work/*.md          <- your work project posts (source)
-posts/interests/*.md     <- your interest/hobby posts (source)
-templates/               <- Jinja2 HTML templates
-static/styles.css        <- your existing stylesheet, extended
-static/uploads/          <- post images end up here
-build.py                 <- run this to regenerate the site
-output/                  <- generated site — point Apache DocumentRoot here
-quickpost/               <- optional mobile "add a post" form
+posts/                  <- Markdown blog posts
+templates/              <- Jinja2 HTML templates
+static/                 <- CSS, JavaScript, and uploaded assets
+static/uploads/         <- Post images
+build.py                <- Static site generator
+output/                 <- Generated website
+quickpost/              <- Optional mobile post creation app
 ```
 
-## 1. Writing a new post by hand
+## Creating a new post
 
-Create a file like `posts/work/2026-08-05-a-new-post.md`:
+Create a Markdown file inside the `posts/` directory:
+
+```
+posts/2026-08-05-example-post.md
+```
+
+Example:
 
 ```markdown
 ---
-title: "A new post"
+title: "Example post"
 date: 2026-08-05
-emoji: 🛡️
-tags: [Information Security]
-image: static/uploads/some-photo.jpg   # optional
-excerpt: One-line teaser shown on the card. Optional — auto-generated if omitted.
+emoji: 📝
+tags: [Example, Markdown]
+image: static/uploads/example.jpg
+excerpt: Short description shown on post cards.
 ---
 
-Post body in **Markdown** goes here.
+# Hello World
+
+This is the post content written in **Markdown**.
 ```
 
-Then run:
+Then generate the website:
 
 ```bash
 python3 build.py
 ```
 
-and sync/deploy `output/` to your Apache container as usual (rsync,
-git push + webhook, etc. — whatever you already use).
+The generated files will be placed in:
 
-## 2. Setting up the mobile quick-post form
+```
+output/
+```
 
-This runs as a small always-on Python process, kept behind Apache and
-protected with HTTP Basic Auth.
+Deploy the contents of this directory to your preferred web server.
+
+## Optional: Mobile quick-post application
+
+The optional Flask application provides a simple interface for creating posts
+from a mobile device.
+
+Features:
+
+- Create Markdown posts through a web form
+- Upload images
+- Resize uploaded images
+- Remove image metadata (EXIF)
+- Automatically rebuild the static website
+
+Install dependencies:
 
 ```bash
-cd quickpost
 pip install -r requirements.txt
-python3 app.py     # listens on 127.0.0.1:5001 by default
 ```
 
-For production, run it under something that keeps it alive
-(`systemd` service, or `gunicorn` behind `mod_proxy`), e.g. a
-`quickpost.service` unit running:
+Run the application:
+
+```bash
+python3 app.py
+```
+
+By default, the application listens locally:
 
 ```
+127.0.0.1:5001
+```
+
+For production use, run it behind a reverse proxy such as Apache or Nginx,
+and protect it with authentication.
+
+Example using Gunicorn:
+
+```bash
 gunicorn -w 1 -b 127.0.0.1:5001 app:app
 ```
 
-Then in your Apache config, reverse-proxy a path to it **and**
-require auth on that path:
+## Reverse proxy example
+
+Example Apache configuration:
 
 ```apache
 <Location "/quickpost/">
@@ -76,31 +117,39 @@ require auth on that path:
 
     AuthType Basic
     AuthName "Quick Post"
-    AuthUserFile /etc/apache2/quickpost.htpasswd
+    AuthUserFile /path/to/password/file
     Require valid-user
 </Location>
 ```
 
-Create the password file once:
+Create authentication credentials:
 
 ```bash
-htpasswd -c /etc/apache2/quickpost.htpasswd yourusername
+htpasswd -c /path/to/password/file username
 ```
 
-Now `https://lerseth.com/quickpost/` prompts for a login before it
-ever reaches Flask, and from phone you can fill in the form,
-attach a photo taken right at the table, and hit "Post it" it saves
-the Markdown file, resizes/strips EXIF from the photo, and re-runs
-`build.py` automatically so the new post is live immediately.
+## Configuration notes
 
-## 3. Notes
+- Replace the Flask `secret_key` with a unique random value before deployment.
+- Post excerpts can be automatically generated from the post content if not
+  provided.
+- Tags and filtering are implemented using simple JavaScript and can be
+  extended with additional functionality.
+- Image upload limits can be adjusted through the image configuration settings.
+- The generated website has no runtime dependencies and can be hosted almost
+  anywhere.
 
-- `app.secret_key` in `quickpost/app.py` is only used for flash
-  messages, replace it with something random regardless.
-- Post excerpts auto-generate from the first ~140 characters if you
-  don't set one in the frontmatter.
-- Tag filtering on `work.html` / `interests.html` is plain JavaScript
-  (no framework) — a good place to practice extending things further,
-  e.g. multi-tag filtering or a search box.
-- `MAX_IMAGE_DIM` in `quickpost/app.py` controls how large uploaded
-  photos are allowed to be (currently 1600px on the long side).
+## Requirements
+
+Typical requirements:
+
+- Python 3.x
+- Jinja2
+- Markdown parser
+- Flask (only required for the optional quick-post application)
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
