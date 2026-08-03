@@ -1,6 +1,6 @@
 ---
 title: Learning
-date: 2026-07-29
+date: 2026-08-03
 emoji: 🐍
 theme: Learning
 tags: [Python]
