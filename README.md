@@ -2,14 +2,13 @@
 
 ## What this is
 
-A static-site generator for lerseth.com, built to sit alongside your
-existing `index.html` / `styles.css`. It reads Markdown posts, renders
+A static-site generator for lerseth.com. It reads Markdown posts, renders
 them through Jinja2 templates, and produces a plain HTML/CSS site in
-`output/` — the only thing Apache needs to serve.
+`output/` the only thing Apache needs to serve.
 
-A small optional Flask app (`quickpost/`) gives you a mobile-friendly
-form to add a new post (with a photo) from your phone mid-session; it
-writes the Markdown file and re-runs the build for you.
+A small optional Flask app (`quickpost/`) gives a mobile-friendly
+form to add a new post (with a photo) from phone mid-session; it
+writes the Markdown file and re-runs the build.
 
 ```
 posts/work/*.md          <- your work project posts (source)
@@ -22,17 +21,7 @@ output/                  <- generated site — point Apache DocumentRoot here
 quickpost/               <- optional mobile "add a post" form
 ```
 
-## 1. Folding this into your existing repo
-
-Drop `posts/`, `templates/`, `static/`, `build.py`, and `quickpost/`
-into your "Hjemside" repo root. Your current `index.html` at the repo
-root can stay as a fallback/backup, but Apache's DocumentRoot should
-point at `output/` once you start using the generator (or you can
-set output to build directly into the repo root and gitignore
-everything except `posts/`, `templates/`, `static/`, `build.py` —
-whichever fits your existing deploy process).
-
-## 2. Writing a new post by hand
+## 1. Writing a new post by hand
 
 Create a file like `posts/work/2026-08-05-a-new-post.md`:
 
@@ -46,7 +35,7 @@ image: static/uploads/some-photo.jpg   # optional
 excerpt: One-line teaser shown on the card. Optional — auto-generated if omitted.
 ---
 
-Your post body in **Markdown** goes here.
+Post body in **Markdown** goes here.
 ```
 
 Then run:
@@ -58,10 +47,10 @@ python3 build.py
 and sync/deploy `output/` to your Apache container as usual (rsync,
 git push + webhook, etc. — whatever you already use).
 
-## 3. Setting up the mobile quick-post form
+## 2. Setting up the mobile quick-post form
 
 This runs as a small always-on Python process, kept behind Apache and
-protected with HTTP Basic Auth (simplest, no custom login code needed).
+protected with HTTP Basic Auth.
 
 ```bash
 cd quickpost
@@ -99,15 +88,15 @@ htpasswd -c /etc/apache2/quickpost.htpasswd yourusername
 ```
 
 Now `https://lerseth.com/quickpost/` prompts for a login before it
-ever reaches Flask, and from your phone you can fill in the form,
-attach a photo taken right at the table, and hit "Post it" — it saves
+ever reaches Flask, and from phone you can fill in the form,
+attach a photo taken right at the table, and hit "Post it" it saves
 the Markdown file, resizes/strips EXIF from the photo, and re-runs
 `build.py` automatically so the new post is live immediately.
 
-## 4. Notes / things you might want to change
+## 3. Notes
 
 - `app.secret_key` in `quickpost/app.py` is only used for flash
-  messages — replace it with something random regardless.
+  messages, replace it with something random regardless.
 - Post excerpts auto-generate from the first ~140 characters if you
   don't set one in the frontmatter.
 - Tag filtering on `work.html` / `interests.html` is plain JavaScript
