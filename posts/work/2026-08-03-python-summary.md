@@ -1,5 +1,5 @@
 ---
-title: Learning
+title: Python Summary
 date: 2026-08-03
 emoji: 🐍
 theme: Learning
