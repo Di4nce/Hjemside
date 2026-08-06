@@ -58,10 +58,15 @@
     <form method="POST" enctype="multipart/form-data">
         <div>
             <label>Category</label>
-            <select name="category">
+            <select name="category" id="category">
                 <option value="interests">Interest (game report, hobby, etc.)</option>
                 <option value="work">Work project</option>
             </select>
+        </div>
+
+        <div>
+            <label>Theme</label>
+            <select name="theme" id="theme"></select>
         </div>
 
         <div>
@@ -70,13 +75,13 @@
         </div>
 
         <div>
-            <label>Emoji (optional)</label>
+            <label>Emoji (optional — defaults based on theme)</label>
             <input type="text" name="emoji" placeholder="🎲">
         </div>
 
         <div>
-            <label>Tags (comma separated)</label>
-            <input type="text" name="tags" placeholder="Tabletop RPGs, D&D">
+            <label>Tags (comma separated, optional)</label>
+            <input type="text" name="tags" placeholder="D&D">
         </div>
 
         <div>
@@ -91,6 +96,29 @@
 
         <button type="submit">Post it</button>
     </form>
+
+    <script>
+        // Themes passed in from Flask so this stays in sync with build.py's
+        // THEMES dict automatically — no hardcoded list duplicated in JS.
+        const THEMES = {{ themes | tojson }};
+
+        const categorySelect = document.getElementById('category');
+        const themeSelect = document.getElementById('theme');
+
+        function updateThemeOptions() {
+            const chosenCategory = categorySelect.value;
+            themeSelect.innerHTML = '';
+            THEMES[chosenCategory].forEach(theme => {
+                const option = document.createElement('option');
+                option.value = theme;
+                option.textContent = theme;
+                themeSelect.appendChild(option);
+            });
+        }
+
+        categorySelect.addEventListener('change', updateThemeOptions);
+        updateThemeOptions(); // populate on page load too
+    </script>
 
 </body>
 </html>

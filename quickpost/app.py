@@ -1,18 +1,4 @@
 #!/usr/bin/env python3
-"""
-quickpost/app.py — tiny mobile-friendly form for posting a new blog entry
-(with an optional photo) straight from your phone.
-
-Meant to run as a small, always-on service behind Apache, reachable only
-at an obscure/authenticated path — e.g. Apache reverse-proxies
-/quickpost/ to this app, and an Apache <Location> block requires HTTP
-Basic Auth before requests ever reach Flask. See README.md for the
-Apache config snippet.
-
-After saving a post, it runs build.py so the live site updates
-immediately — no separate step needed once you're back at a computer.
-"""
-
 import subprocess
 import re
 from datetime import date
@@ -20,14 +6,29 @@ from pathlib import Path
 
 from flask import Flask, request, render_template, redirect, url_for, flash
 from PIL import Image
-from PIL.ExifTags import TAGS
 
 BASE = Path(__file__).resolve().parent.parent  # .../site/
 POSTS_DIR = BASE / "posts"
 UPLOADS_DIR = BASE / "static" / "uploads"
 BUILD_SCRIPT = BASE / "build.py"
+VENV_PYTHON = BASE / "venv" / "bin" / "python3"
 
 MAX_IMAGE_DIM = 1600  # px, longest side — keeps phone photos from being huge
+
+# Same fixed themes as build.py — kept in sync with THEMES there.
+THEMES = {
+    "work": ["Information Security", "Quality Management", "Learning"],
+    "interests": ["Music", "Tabletop RPGs", "Homelab"],
+}
+
+THEME_EMOJI = {
+    "Information Security": "🛡️",
+    "Quality Management": "🔄️",
+    "Learning": "🧑‍🏫",
+    "Music": "🎸",
+    "Tabletop RPGs": "🎲",
+    "Homelab": "💻",
+}
 
 app = Flask(__name__)
 app.secret_key = "change-this-to-something-random"  # only used for flash messages
@@ -57,10 +58,16 @@ def save_and_resize_image(file_storage, slug):
 def quickpost():
     if request.method == "POST":
         category = request.form["category"]  # "work" or "interests"
+        theme = request.form["theme"]
         title = request.form["title"].strip()
         body = request.form["body"].strip()
         tags = [t.strip() for t in request.form.get("tags", "").split(",") if t.strip()]
-        emoji = request.form.get("emoji", "").strip() or ("🎲" if category == "interests" else "🛡️")
+
+        if theme not in THEMES.get(category, []):
+            flash(f"'{theme}' isn't a valid theme for {category}.")
+            return redirect(url_for("quickpost"))
+
+        emoji = request.form.get("emoji", "").strip() or THEME_EMOJI.get(theme, "📝")
 
         if not title or not body:
             flash("Title and body are required.")
@@ -83,6 +90,7 @@ def quickpost():
             f"title: \"{title}\"\n"
             f"date: {today}\n"
             f"emoji: {emoji}\n"
+            f"theme: {theme}\n"
             f"tags: {tags_yaml}\n"
             f"{image_line}"
             "---\n\n"
@@ -93,8 +101,10 @@ def quickpost():
         post_path.write_text(frontmatter + body + "\n", encoding="utf-8")
 
         # Rebuild the static site immediately so the post goes live now.
+        # Uses the venv's Python directly — same lesson as deploy.sh, this
+        # process may not have the venv "activated" in its environment.
         result = subprocess.run(
-            ["python3", str(BUILD_SCRIPT)],
+            [str(VENV_PYTHON), str(BUILD_SCRIPT)],
             capture_output=True, text=True,
         )
 
@@ -105,10 +115,10 @@ def quickpost():
 
         return redirect(url_for("quickpost"))
 
-    return render_template("quickpost.html")
+    return render_template("quickpost.html", themes=THEMES)
 
 
 if __name__ == "__main__":
     # For local testing only. In production run this behind Apache
-    # (mod_wsgi or a reverse proxy to gunicorn) — see README.md.
+    # via gunicorn + a reverse proxy — see the step-by-step guide.
     app.run(host="127.0.0.1", port=5001, debug=False)
