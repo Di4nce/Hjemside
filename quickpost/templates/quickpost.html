@@ -43,6 +43,35 @@
             margin-left: auto;
             margin-right: auto;
         }
+        .field-group { display: flex; flex-direction: column; gap: 14px; }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-row input { width: auto; }
+        .checkbox-row label { font-weight: normal; }
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            background: white;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        .mode-toggle button.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -55,69 +84,155 @@
         {% endif %}
     {% endwith %}
 
+    <div class="mode-toggle">
+        <button type="button" id="mode-new-btn" class="active">New post</button>
+        <button type="button" id="mode-update-btn">Add update</button>
+    </div>
+
     <form method="POST" enctype="multipart/form-data">
-        <div>
-            <label>Category</label>
-            <select name="category" id="category">
-                <option value="interests">Interest (game report, hobby, etc.)</option>
-                <option value="work">Work project</option>
-            </select>
+        <input type="hidden" name="mode" id="mode-field" value="new">
+
+        <div id="new-post-fields" class="field-group">
+            <div>
+                <label>Category</label>
+                <select name="category" id="category">
+                    <option value="interests">Interest (game report, hobby, etc.)</option>
+                    <option value="work">Work project</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Theme</label>
+                <select name="theme" id="theme"></select>
+            </div>
+
+            <div>
+                <label>Title</label>
+                <input type="text" name="title" id="title-input" placeholder="Session 13: ...">
+            </div>
+
+            <div>
+                <label>Emoji (optional — defaults based on theme)</label>
+                <input type="text" name="emoji" placeholder="🎲">
+            </div>
+
+            <div>
+                <label>Tags (comma separated, optional)</label>
+                <input type="text" name="tags" placeholder="D&D">
+            </div>
+
+            <div>
+                <label>Photo (optional — camera or library)</label>
+                <input type="file" name="photo" accept="image/*">
+            </div>
+
+            <div>
+                <label>Body</label>
+                <textarea name="body" id="body-input" placeholder="What happened tonight..."></textarea>
+            </div>
         </div>
 
-        <div>
-            <label>Theme</label>
-            <select name="theme" id="theme"></select>
-        </div>
+        <div id="update-fields" class="field-group" style="display:none;">
+            <div>
+                <label>Which post?</label>
+                <select name="existing_post" id="existing_post"></select>
+            </div>
 
-        <div>
-            <label>Title</label>
-            <input type="text" name="title" required placeholder="Session 13: ...">
-        </div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="show-older">
+                <label for="show-older">Show older posts too</label>
+            </div>
 
-        <div>
-            <label>Emoji (optional — defaults based on theme)</label>
-            <input type="text" name="emoji" placeholder="🎲">
-        </div>
+            <div>
+                <label>Photo (optional — camera or library)</label>
+                <input type="file" name="update_photo" accept="image/*">
+            </div>
 
-        <div>
-            <label>Tags (comma separated, optional)</label>
-            <input type="text" name="tags" placeholder="D&D">
-        </div>
-
-        <div>
-            <label>Photo (optional — camera or library)</label>
-            <input type="file" name="photo" accept="image/*">
-        </div>
-
-        <div>
-            <label>Body</label>
-            <textarea name="body" required placeholder="What happened tonight..."></textarea>
+            <div>
+                <label>Comment (optional if you added a photo)</label>
+                <textarea name="comment" placeholder="Round 3: China took the lead..."></textarea>
+            </div>
         </div>
 
         <button type="submit">Post it</button>
     </form>
 
     <script>
-        // Themes passed in from Flask so this stays in sync with build.py's
-        // THEMES dict automatically — no hardcoded list duplicated in JS.
         const THEMES = {{ themes | tojson }};
+        const RECENT_POSTS = {{ recent_posts | tojson }};
+        const TODAY = {{ today | tojson }};
 
+        // --- Theme cascading dropdown (new post) ---
         const categorySelect = document.getElementById('category');
         const themeSelect = document.getElementById('theme');
 
         function updateThemeOptions() {
-            const chosenCategory = categorySelect.value;
             themeSelect.innerHTML = '';
-            THEMES[chosenCategory].forEach(theme => {
+            THEMES[categorySelect.value].forEach(theme => {
                 const option = document.createElement('option');
                 option.value = theme;
                 option.textContent = theme;
                 themeSelect.appendChild(option);
             });
         }
-
         categorySelect.addEventListener('change', updateThemeOptions);
-        updateThemeOptions(); // populate on page load too
+
+        // --- Existing-post dropdown (add update) — defaults to today ---
+        const existingPostSelect = document.getElementById('existing_post');
+        const showOlderCheckbox = document.getElementById('show-older');
+
+        function updateExistingPostOptions() {
+            const showOlder = showOlderCheckbox.checked;
+            const posts = showOlder
+                ? RECENT_POSTS
+                : RECENT_POSTS.filter(p => p.date_iso === TODAY);
+
+            existingPostSelect.innerHTML = '';
+
+            if (posts.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = 'No posts from today — check "Show older posts"';
+                option.disabled = true;
+                existingPostSelect.appendChild(option);
+                return;
+            }
+
+            posts.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.key;
+                option.textContent = `${p.emoji} ${p.title} (${p.date_display})`;
+                existingPostSelect.appendChild(option);
+            });
+        }
+        showOlderCheckbox.addEventListener('change', updateExistingPostOptions);
+
+        // --- Mode toggle ---
+        const modeField = document.getElementById('mode-field');
+        const modeNewBtn = document.getElementById('mode-new-btn');
+        const modeUpdateBtn = document.getElementById('mode-update-btn');
+        const newPostFields = document.getElementById('new-post-fields');
+        const updateFields = document.getElementById('update-fields');
+        const titleInput = document.getElementById('title-input');
+        const bodyInput = document.getElementById('body-input');
+
+        function setMode(mode) {
+            modeField.value = mode;
+            const isNew = mode === 'new';
+            newPostFields.style.display = isNew ? '' : 'none';
+            updateFields.style.display = isNew ? 'none' : '';
+            modeNewBtn.classList.toggle('active', isNew);
+            modeUpdateBtn.classList.toggle('active', !isNew);
+            titleInput.required = isNew;
+            bodyInput.required = isNew;
+        }
+
+        modeNewBtn.addEventListener('click', () => setMode('new'));
+        modeUpdateBtn.addEventListener('click', () => setMode('update'));
+
+        // Initialize everything on page load
+        updateThemeOptions();
+        updateExistingPostOptions();
+        setMode('new');
     </script>
 
 </body>

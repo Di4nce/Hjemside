@@ -89,6 +89,7 @@ def load_posts(category):
             "slug": slug,
             "excerpt": excerpt,
             "body_html": body_html,
+            "path": md_file,  # source file — used by quickpost to append updates
         })
 
     posts.sort(key=lambda p: p["date"], reverse=True)
