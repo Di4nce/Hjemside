@@ -5,7 +5,7 @@ from datetime import date
 from pathlib import Path
 
 from flask import Flask, request, render_template, redirect, url_for, flash
-from PIL import Image
+from PIL import Image, ImageOps
 
 BASE = Path(__file__).resolve().parent.parent  # .../site/
 POSTS_DIR = BASE / "posts"
@@ -46,7 +46,8 @@ def save_and_resize_image(file_storage, slug):
     dest = UPLOADS_DIR / f"{slug}.jpg"
 
     img = Image.open(file_storage.stream)
-    img = img.convert("RGB")  # drops EXIF/alpha, normalizes format
+    img = ImageOps.exif_transpose(img)  # rotate pixels to match how the phone was actually held
+    img = img.convert("RGB")  # then safe to drop EXIF/alpha, normalize format
 
     img.thumbnail((MAX_IMAGE_DIM, MAX_IMAGE_DIM))
     img.save(dest, "JPEG", quality=82)
