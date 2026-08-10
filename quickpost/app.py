@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 quickpost/app.py — tiny mobile-friendly form for posting a new blog entry,
-or adding a quick update (photo + comment) to an existing post, straight
-from your phone.
+or adding a quick update (photo/video/audio + comment) to an existing
+post, straight from your phone.
 
 Meant to run as a small, always-on service behind Apache, reachable only
 at an obscure/authenticated path — e.g. Apache reverse-proxies
@@ -28,10 +28,11 @@ UPLOADS_DIR = BASE / "static" / "uploads"
 BUILD_SCRIPT = BASE / "build.py"
 VENV_PYTHON = BASE / "venv" / "bin" / "python3"
 
-# Reuse build.py's own post-parsing logic and theme list directly, rather
-# than duplicating it — so the two files can't drift out of sync.
+# Reuse build.py's own post-parsing logic, theme list, and media-type
+# detection directly, rather than duplicating them — so the two files
+# can't drift out of sync.
 sys.path.insert(0, str(BASE))
-from build import load_posts, THEMES  # noqa: E402
+from build import load_posts, THEMES, detect_media_type  # noqa: E402
 
 MAX_IMAGE_DIM = 1600  # px, longest side — keeps phone photos from being huge
 
@@ -45,7 +46,11 @@ THEME_EMOJI = {
 }
 
 app = Flask(__name__)
-app.secret_key = "123qwe"  # only used for flash messages
+app.secret_key = "change-this-to-something-random"  # only used for flash messages
+
+# Safety net: stops a huge accidental upload from filling the server's
+# disk before ffmpeg even gets a chance to compress it down.
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
 
 
 def slugify(text):
@@ -56,7 +61,6 @@ def slugify(text):
 
 def save_and_resize_image(file_storage, filename_stem):
     """Save an uploaded photo, downscale it, strip EXIF, return the relative path."""
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
     dest = UPLOADS_DIR / f"{filename_stem}.jpg"
 
     img = Image.open(file_storage.stream)
@@ -67,6 +71,71 @@ def save_and_resize_image(file_storage, filename_stem):
     img.save(dest, "JPEG", quality=82)
 
     return f"static/uploads/{filename_stem}.jpg"
+
+
+def compress_video(file_storage, filename_stem):
+    """Save an uploaded video, transcoding it to a compressed, universally
+    playable H.264 mp4 capped at 1280px wide (smaller videos aren't
+    upscaled). Always outputs .mp4 regardless of the source format."""
+    tmp_path = UPLOADS_DIR / f"_incoming_{filename_stem}{Path(file_storage.filename).suffix}"
+    dest = UPLOADS_DIR / f"{filename_stem}.mp4"
+    file_storage.save(tmp_path)
+
+    result = subprocess.run(
+        [
+            "ffmpeg", "-y", "-i", str(tmp_path),
+            "-vf", "scale='min(1280,iw)':'-2'",  # cap width at 1280px, never upscale
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:a", "aac", "-b:a", "128k",
+            "-movflags", "+faststart",  # lets the video start playing before it's fully downloaded
+            str(dest),
+        ],
+        capture_output=True, text=True,
+    )
+
+    tmp_path.unlink(missing_ok=True)  # remove the original upload either way
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Video compression failed: {result.stderr[-400:]}")
+
+    return f"static/uploads/{filename_stem}.mp4"
+
+
+def save_media(file_storage, filename_stem):
+    """Save an uploaded photo, video, or audio file, dispatching by type.
+
+    Images are resized; video is compressed via ffmpeg; audio is stored
+    as uploaded (already small, no compatibility issues to fix). Returns
+    (relative_path, media_type). Raises RuntimeError if video compression
+    fails (e.g. ffmpeg isn't installed) — callers should catch this.
+    """
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+    media_type = detect_media_type(file_storage.filename)
+
+    if media_type == "image":
+        return save_and_resize_image(file_storage, filename_stem), "image"
+
+    if media_type == "video":
+        return compress_video(file_storage, filename_stem), "video"
+
+    # audio — store as-is
+    ext = Path(file_storage.filename).suffix.lower()
+    dest = UPLOADS_DIR / f"{filename_stem}{ext}"
+    file_storage.save(dest)
+    return f"static/uploads/{filename_stem}{ext}", "audio"
+
+
+def media_markdown(relative_path, media_type):
+    """Return the Markdown/HTML snippet to embed a piece of media inline
+    in a post body. Images use standard Markdown syntax; video/audio use
+    raw HTML, which Python-Markdown passes through untouched."""
+    # ../ because posts live one folder deeper than static/ on the live site
+    src = f"../{relative_path}"
+    if media_type == "video":
+        return f'<video class="post-media" src="{src}" controls preload="metadata"></video>\n\n'
+    if media_type == "audio":
+        return f'<audio class="post-audio" src="{src}" controls preload="metadata"></audio>\n\n'
+    return f"![]({src})\n\n"
 
 
 def get_recent_posts():
@@ -128,11 +197,15 @@ def handle_new_post():
     today = date.today().isoformat()
     filename = f"{today}-{slug}.md"
 
-    image_line = ""
-    photo = request.files.get("photo")
-    if photo and photo.filename:
-        image_path = save_and_resize_image(photo, slug)
-        image_line = f"image: {image_path}\n"
+    media_line = ""
+    media_file = request.files.get("media")
+    if media_file and media_file.filename:
+        try:
+            media_path, _media_type = save_media(media_file, slug)
+            media_line = f"media: {media_path}\n"
+        except RuntimeError as e:
+            flash(f"Couldn't process that file, post not saved: {e}")
+            return redirect(url_for("quickpost"))
 
     tags_yaml = "[" + ", ".join(tags) + "]" if tags else "[]"
 
@@ -143,7 +216,7 @@ def handle_new_post():
         f"emoji: {emoji}\n"
         f"theme: {theme}\n"
         f"tags: {tags_yaml}\n"
-        f"{image_line}"
+        f"{media_line}"
         "---\n\n"
     )
 
@@ -173,22 +246,25 @@ def handle_update():
 
     post_path = matches[0]["path"]
 
-    photo = request.files.get("update_photo")
-    has_photo = bool(photo and photo.filename)
+    media_file = request.files.get("update_media")
+    has_media = bool(media_file and media_file.filename)
 
-    if not comment and not has_photo:
-        flash("Add a photo, a comment, or both.")
+    if not comment and not has_media:
+        flash("Add a photo/video/audio clip, a comment, or both.")
         return redirect(url_for("quickpost"))
 
-    timestamp = datetime.now().strftime("%H%M%S")
-    image_markdown = ""
-    if has_photo:
-        image_path = save_and_resize_image(photo, f"{slug}-{timestamp}")
-        # ../ because posts live one folder deeper than static/ on the live site
-        image_markdown = f"![](../{image_path})\n\n"
+    media_html = ""
+    if has_media:
+        timestamp = datetime.now().strftime("%H%M%S")
+        try:
+            media_path, media_type = save_media(media_file, f"{slug}-{timestamp}")
+            media_html = media_markdown(media_path, media_type)
+        except RuntimeError as e:
+            flash(f"Couldn't process that file, update not saved: {e}")
+            return redirect(url_for("quickpost"))
 
     time_label = datetime.now().strftime("%H:%M")
-    addition = f"\n\n---\n\n*{time_label}*\n\n{image_markdown}{comment}\n"
+    addition = f"\n\n---\n\n*{time_label}*\n\n{media_html}{comment}\n"
 
     with post_path.open("a", encoding="utf-8") as f:
         f.write(addition)

@@ -17,7 +17,15 @@
     <div class="cards" id="post-grid">
         {% for post in posts %}
         <a class="card post-card" href="posts/{{ post.slug }}.html" data-theme="{{ post.theme }}">
-            {% if post.image %}<img class="post-image" src="{{ post.image }}" alt="">{% endif %}
+            {% if post.media %}
+                {% if post.media_type == 'video' %}
+                <video class="post-media" src="{{ post.media }}" muted preload="metadata"></video>
+                {% elif post.media_type == 'audio' %}
+                <div class="post-media-badge">🎵 Audio</div>
+                {% else %}
+                <img class="post-media" src="{{ post.media }}" alt="">
+                {% endif %}
+            {% endif %}
             <span class="post-date">{{ post.date.strftime('%d %b %Y') }}</span>
             <h3>{{ post.emoji }} {{ post.title }}</h3>
             <p class="post-excerpt">{{ post.excerpt }}</p>

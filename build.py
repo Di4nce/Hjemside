@@ -34,6 +34,28 @@ THEMES = {
     "interests": ["Music", "Tabletop RPGs", "Homelab"],
 }
 
+# Extension -> media type, used to decide whether a post's hero media
+# (and any inline media added via quickpost updates) renders as an
+# <img>, <video>, or <audio> tag. Shared with quickpost/app.py.
+MEDIA_EXTENSIONS = {
+    "image": {".jpg", ".jpeg", ".png", ".gif", ".webp"},
+    "video": {".mp4", ".mov", ".webm", ".m4v"},
+    "audio": {".mp3", ".m4a", ".wav", ".ogg", ".aac"},
+}
+
+
+def detect_media_type(path_str):
+    """Given a file path/name, return 'image', 'video', or 'audio' based
+    on its extension. Defaults to 'image' for unrecognized extensions."""
+    if not path_str:
+        return None
+    ext = Path(path_str).suffix.lower()
+    for media_type, extensions in MEDIA_EXTENSIONS.items():
+        if ext in extensions:
+            return media_type
+    return "image"
+
+
 env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
 
@@ -78,13 +100,19 @@ def load_posts(category):
             plain = re.sub("<[^<]+?>", "", plain)
             excerpt = (plain[:140] + "…") if len(plain) > 140 else plain
 
+        # "media:" is the current field name; "image:" still works for
+        # posts written before video/audio support existed.
+        media_path = post.get("media") or post.get("image", "")
+        media_type = detect_media_type(media_path)
+
         posts.append({
             "title": post["title"],
             "date": date,
             "emoji": post.get("emoji", ""),
             "theme": theme,
             "tags": post.get("tags", []),  # optional extra labels, just for display
-            "image": post.get("image", ""),
+            "media": media_path,
+            "media_type": media_type,
             "category": category,
             "slug": slug,
             "excerpt": excerpt,

@@ -373,11 +373,28 @@ footer {
     font-size: 15px;
 }
 
-.card .post-image {
+.card .post-media {
     width: 100%;
     height: 160px;
     object-fit: cover;
     border-radius: 10px;
+    margin-bottom: 15px;
+    background: #111827; /* fills any letterboxing while video metadata loads */
+}
+
+.post-audio {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.post-media-badge {
+    display: inline-block;
+    background: #eef2ff;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 8px;
     margin-bottom: 15px;
 }
 
@@ -451,7 +468,7 @@ footer {
 }
 
 /* Single post page */
-.post-full .post-image {
+.post-full .post-media {
     height: auto;
     max-height: 420px;
     margin-bottom: 30px;
