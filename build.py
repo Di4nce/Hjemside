@@ -100,10 +100,21 @@ def load_posts(category):
             plain = re.sub("<[^<]+?>", "", plain)
             excerpt = (plain[:140] + "…") if len(plain) > 140 else plain
 
-        # "media:" is the current field name; "image:" still works for
+                # "media:" is the current field name; "image:" still works for
         # posts written before video/audio support existed.
         media_path = post.get("media") or post.get("image", "")
         media_type = detect_media_type(media_path)
+
+        # Video posters live alongside the video as <name>-poster.jpg.
+        # Only reference one if it actually exists — older video posts
+        # (from before this feature existed) simply won't have one, and
+        # this keeps that safe rather than pointing at a broken image.
+        poster = ""
+        if media_type == "video" and media_path:
+            mp = Path(media_path)
+            candidate = mp.parent / f"{mp.stem}-poster.jpg"
+            if (ROOT / candidate).exists():
+                poster = str(candidate)
 
         posts.append({
             "title": post["title"],
@@ -113,6 +124,7 @@ def load_posts(category):
             "tags": post.get("tags", []),  # optional extra labels, just for display
             "media": media_path,
             "media_type": media_type,
+            "poster": poster,
             "category": category,
             "slug": slug,
             "excerpt": excerpt,

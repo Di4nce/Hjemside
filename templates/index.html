@@ -39,7 +39,7 @@
         <a class="card post-card" href="posts/{{ post.slug }}.html">
             {% if post.media %}
                 {% if post.media_type == 'video' %}
-                <video class="post-media" src="{{ post.media }}" muted preload="metadata"></video>
+                <video class="post-media" src="{{ post.media }}" poster="{{ post.poster }}" muted preload="metadata"></video>
                 {% elif post.media_type == 'audio' %}
                 <div class="post-media-badge">🎵 Audio</div>
                 {% else %}
@@ -69,7 +69,7 @@
         <a class="card post-card" href="posts/{{ post.slug }}.html">
             {% if post.media %}
                 {% if post.media_type == 'video' %}
-                <video class="post-media" src="{{ post.media }}" muted preload="metadata"></video>
+                <video class="post-media" src="{{ post.media }}" poster="{{ post.poster }}" muted preload="metadata"></video>
                 {% elif post.media_type == 'audio' %}
                 <div class="post-media-badge">🎵 Audio</div>
                 {% else %}

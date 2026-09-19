@@ -73,10 +73,33 @@ def save_and_resize_image(file_storage, filename_stem):
     return f"static/uploads/{filename_stem}.jpg"
 
 
+def generate_poster(video_path, poster_path):
+    """Extract a representative frame from a video as a JPEG poster image
+    (mobile browsers, especially iOS, often show a black box instead of a
+    first-frame preview without one). Tries a moment into the clip first
+    to skip a possible black opening frame; falls back to frame zero for
+    very short clips where that seek would land past the end. Best-effort
+    — returns True/False, never raises, since a missing poster shouldn't
+    block the whole upload."""
+    result = subprocess.run(
+        ["ffmpeg", "-y", "-i", str(video_path), "-ss", "00:00:00.5",
+         "-vframes", "1", "-update", "1", "-q:v", "3", str(poster_path)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 or not poster_path.exists() or poster_path.stat().st_size == 0:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", str(video_path),
+             "-vframes", "1", "-update", "1", "-q:v", "3", str(poster_path)],
+            capture_output=True, text=True,
+        )
+    return poster_path.exists()
+
+
 def compress_video(file_storage, filename_stem):
     """Save an uploaded video, transcoding it to a compressed, universally
     playable H.264 mp4 capped at 1280px wide (smaller videos aren't
-    upscaled). Always outputs .mp4 regardless of the source format."""
+    upscaled). Always outputs .mp4 regardless of the source format. Also
+    generates a poster thumbnail alongside it."""
     tmp_path = UPLOADS_DIR / f"_incoming_{filename_stem}{Path(file_storage.filename).suffix}"
     dest = UPLOADS_DIR / f"{filename_stem}.mp4"
     file_storage.save(tmp_path)
@@ -97,6 +120,9 @@ def compress_video(file_storage, filename_stem):
 
     if result.returncode != 0:
         raise RuntimeError(f"Video compression failed: {result.stderr[-400:]}")
+
+    poster_path = UPLOADS_DIR / f"{filename_stem}-poster.jpg"
+    generate_poster(dest, poster_path)
 
     return f"static/uploads/{filename_stem}.mp4"
 
@@ -132,7 +158,10 @@ def media_markdown(relative_path, media_type):
     # ../ because posts live one folder deeper than static/ on the live site
     src = f"../{relative_path}"
     if media_type == "video":
-        return f'<video class="post-media" src="{src}" controls preload="metadata"></video>\n\n'
+        stem = Path(relative_path).stem
+        poster_rel = Path(relative_path).parent / f"{stem}-poster.jpg"
+        poster_attr = f' poster="../{poster_rel}"' if (UPLOADS_DIR / f"{stem}-poster.jpg").exists() else ""
+        return f'<video class="post-media" src="{src}"{poster_attr} controls preload="metadata"></video>\n\n'
     if media_type == "audio":
         return f'<audio class="post-audio" src="{src}" controls preload="metadata"></audio>\n\n'
     return f"![]({src})\n\n"

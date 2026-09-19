@@ -7,7 +7,7 @@
 <section class="section post-full">
     {% if post.media %}
         {% if post.media_type == 'video' %}
-        <video class="post-media" src="../{{ post.media }}" controls preload="metadata"></video>
+        <video class="post-media" src="../{{ post.media }}" poster="../{{ post.poster }}" controls preload="metadata"></video>
         {% elif post.media_type == 'audio' %}
         <audio class="post-audio" src="../{{ post.media }}" controls preload="metadata"></audio>
         {% else %}
