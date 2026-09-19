@@ -345,6 +345,12 @@ footer {
 
 }
 
+@media (max-width: 700px) {
+    .post-full .post-media {
+        max-height: 280px;
+    }
+}
+
 /* ---------------------------------- */
 /* Blog additions                     */
 /* ---------------------------------- */
